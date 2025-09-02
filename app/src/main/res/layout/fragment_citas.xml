@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/backgroundLight"
+    tools:context=".ui.citas.CitasFragment">
+
+    <TextView
+        android:id="@+id/text_citas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Gestión de Citas Médicas"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/primaryDarkBlue"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_nueva_cita"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nueva Cita"
+        android:backgroundTint="@color/primaryBlue"
+        android:textColor="@color/white"
+        android:layout_marginBottom="16dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_citas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp" />
+
+    <TextView
+        android:id="@+id/text_sin_citas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No tienes citas programadas"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginTop="32dp" />
+
+</LinearLayout>

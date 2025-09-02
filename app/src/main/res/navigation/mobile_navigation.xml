@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.medicontrolpro.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_citas"
+        android:name="com.example.medicontrolpro.ui.citas.CitasFragment"
+        android:label="Citas Médicas"
+        tools:layout="@layout/fragment_citas" />
+
+    <fragment
+        android:id="@+id/nav_expediente"
+        android:name="com.example.medicontrolpro.ui.expediente.ExpedienteFragment"
+        android:label="Expediente Médico"
+        tools:layout="@layout/fragment_expediente" />
+
+    <fragment
+        android:id="@+id/nav_doctores"
+        android:name="com.example.medicontrolpro.ui.doctores.DoctoresFragment"
+        android:label="Doctores"
+        tools:layout="@layout/fragment_doctores" />
+
+    <fragment
+        android:id="@+id/nav_perfil"
+        android:name="com.example.medicontrolpro.ui.perfil.PerfilFragment"
+        android:label="Mi Perfil"
+        tools:layout="@layout/fragment_perfil" />
+</navigation>

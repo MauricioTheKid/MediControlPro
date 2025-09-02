@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">MediControlPro</string>
+    <string name="menu_home">Inicio</string>
+    <string name="menu_citas">Citas Médicas</string>
+    <string name="menu_expediente">Expediente Médico</string>
+    <string name="menu_doctores">Doctores</string>
+    <string name="menu_perfil">Mi Perfil</string>
+    <string name="action_settings">Configuración</string>
+
+    <!-- Textos para la aplicación -->
+    <string name="titulo_bienvenida">Bienvenido a MediControlPro</string>
+    <string name="subtitulo_bienvenida">Sistema de Gestión Médica Integral</string>
+    <string name="texto_citas">Gestión de Citas Médicas</string>
+    <string name="texto_expediente">Expediente Médico Digital</string>
+    <string name="texto_doctores">Directorio de Doctores</string>
+    <string name="texto_perfil">Información de Perfil</string>
+</resources>
