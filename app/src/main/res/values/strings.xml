@@ -14,4 +14,43 @@
     <string name="texto_expediente">Expediente Médico Digital</string>
     <string name="texto_doctores">Directorio de Doctores</string>
     <string name="texto_perfil">Información de Perfil</string>
+    <string name="notification_channel_name">Recordatorios de Citas</string>
+    <string name="notification_channel_description">Notificaciones para recordatorios de citas médicas</string>
+
+    <!-- Auth Strings -->
+    <string name="title_activity_login">Iniciar Sesión</string>
+    <string name="title_activity_register">Registro</string>
+    <string name="hint_username">Nombre de usuario</string>
+    <string name="hint_password">Contraseña</string>
+    <string name="hint_first_name">Nombre</string>
+    <string name="hint_last_name">Apellido</string>
+    <string name="hint_ssn">SSN</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_phone">Teléfono</string>
+    <string name="btn_login">Iniciar Sesión</string>
+    <string name="btn_register">Registrarse</string>
+    <string name="text_no_account">¿No tienes cuenta?</string>
+    <string name="text_register">Regístrate</string>
+    <string name="text_have_account">¿Ya tienes cuenta?</string>
+    <string name="text_login">Iniciar Sesión</string>
+    <string name="check_remember">Recordarme</string>
+    <string name="footer_copyright">© 2024 MediControlPro</string>
+
+    <!-- Mensajes de error -->
+    <string name="error_username_required">Ingrese su nombre de usuario</string>
+    <string name="error_password_required">Ingrese su contraseña</string>
+    <string name="error_password_length">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="error_first_name_required">Ingrese su nombre</string>
+    <string name="error_last_name_required">Ingrese su apellido</string>
+    <string name="error_ssn_required">Ingrese su SSN</string>
+    <string name="error_ssn_length">El SSN debe tener 9 dígitos</string>
+    <string name="error_email_required">Ingrese su email</string>
+    <string name="error_email_invalid">Ingrese un email válido</string>
+    <string name="error_phone_required">Ingrese su número de teléfono</string>
+
+    <!-- Mensajes de éxito/error -->
+    <string name="login_success">Inicio de sesión exitoso</string>
+    <string name="login_failed">Usuario o contraseña incorrectos</string>
+    <string name="register_success">Registro exitoso</string>
+    <string name="register_failed">El usuario ya existe</string>
 </resources>

@@ -22,4 +22,8 @@
     <color name="estado_pendiente">#FFFFC107</color>
     <color name="estado_cancelado">#FFF44336</color>
     <color name="estado_completado">#FF2196F3</color>
+
+    <!-- Colores adicionales para expediente -->
+    <color name="primaryDark">#FF1976D2</color>
+    <color name="textSecondary">#FF757575</color>
 </resources>

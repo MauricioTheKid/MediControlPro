@@ -6,17 +6,21 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.example.medicontrolpro.data.CitaEntity;
 import com.example.medicontrolpro.data.CitaRepository;
+import com.example.medicontrolpro.data.ExpedienteEntity;
+import com.example.medicontrolpro.data.ExpedienteRepository;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CitasViewModel extends AndroidViewModel {
     private CitaRepository citaRepository;
+    private ExpedienteRepository expedienteRepository; // Nuevo
     private LiveData<List<CitaEntity>> allCitas;
     private MutableLiveData<String> mText;
 
     public CitasViewModel(Application application) {
         super(application);
         citaRepository = new CitaRepository(application);
+        expedienteRepository = new ExpedienteRepository(application); // Nuevo
         allCitas = citaRepository.getAllCitas();
         mText = new MutableLiveData<>();
         mText.setValue("Gestión de Citas Médicas");
@@ -30,6 +34,12 @@ public class CitasViewModel extends AndroidViewModel {
     public void delete(CitaEntity cita) { citaRepository.delete(cita); }
     public LiveData<CitaEntity> getCitaById(int id) { return citaRepository.getCitaById(id); }
     public LiveData<List<CitaEntity>> searchCitas(String query) { return citaRepository.searchCitas(query); }
+
+    // Método para crear expediente automáticamente cuando una cita se completa
+    public void crearExpedienteDesdeCita(CitaEntity cita) {
+        ExpedienteEntity expediente = new ExpedienteEntity(cita);
+        expedienteRepository.insert(expediente);
+    }
 
     public static class Cita {
         public int id;

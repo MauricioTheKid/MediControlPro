@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@color/backgroundLight"
+    android:background="@android:color/white"
     tools:context=".ui.citas.CitasFragment">
 
     <TextView
@@ -16,19 +16,74 @@
         android:text="Gestión de Citas Médicas"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="@color/primaryDarkBlue"
+        android:textColor="#FF1976D2"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
+
+    <!-- Barra de búsqueda -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/search_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Buscar doctor, especialidad o motivo..."
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/ic_search"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/search_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Filtros en una sola línea -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btn_filter_estado"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Filtrar por Estado"
+            android:textColor="#FF2196F3"
+            android:backgroundTint="@android:color/transparent" />
+
+        <Button
+            android:id="@+id/btn_filter_fecha"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Filtrar por Fecha"
+            android:layout_marginStart="8dp"
+            android:textColor="#FF2196F3"
+            android:backgroundTint="@android:color/transparent" />
+
+    </LinearLayout>
+
+    <!-- Chips de filtros activos -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_filters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/btn_nueva_cita"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Nueva Cita"
-        android:backgroundTint="@color/primaryBlue"
-        android:textColor="@color/white"
-        android:layout_marginBottom="16dp"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+        android:backgroundTint="#FF2196F3"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="16dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_citas"
