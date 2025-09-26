@@ -9,7 +9,7 @@ public class DatabaseClient {
 
     private DatabaseClient(Context context) {
         appDatabase = Room.databaseBuilder(context, AppDatabase.class, "medicontrol_db")
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration() // ← ESTO ELIMINA Y RECREA LA BD
                 .build();
     }
 

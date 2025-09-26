@@ -62,4 +62,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.6.2")
+
+    // CircleImageView para fotos de perfil circulares - NUEVA DEPENDENCIA
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 }
