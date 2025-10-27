@@ -26,4 +26,7 @@
     <!-- Colores adicionales para expediente -->
     <color name="primaryDark">#FF1976D2</color>
     <color name="textSecondary">#FF757575</color>
+
+    <!-- ✅ NUEVO: Color para estado de sincronización pendiente -->
+    <color name="orange_light">#FFFFE0B2</color>
 </resources>

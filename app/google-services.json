@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "165815524463",
+    "project_id": "medicontrolpro-8cfff",
+    "storage_bucket": "medicontrolpro-8cfff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165815524463:android:a150a124ac7bbe6136c19a",
+        "android_client_info": {
+          "package_name": "com.example.medicontrolpro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuVqFh1CSPyNp0-2L6GrVHTVG8oRsjBb4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

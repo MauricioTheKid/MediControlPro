@@ -1,282 +1,232 @@
 package com.example.medicontrolpro.ui.perfil;
 
-import de.hdodenhof.circleimageview.CircleImageView; // NUEVA IMPORTACIÓN
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.medicontrolpro.data.PacienteEntity;
-import com.example.medicontrolpro.databinding.FragmentPerfilBinding;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import com.example.medicontrolpro.R;
+import com.example.medicontrolpro.data.UsuarioEntity;
+import com.example.medicontrolpro.ui.auth.AuthViewModel;
 
 public class PerfilFragment extends Fragment {
 
-    private FragmentPerfilBinding binding;
-    private PerfilViewModel perfilViewModel;
-    private ActivityResultLauncher<Intent> galleryLauncher;
-    private ActivityResultLauncher<Intent> cameraLauncher;
-    private String currentPhotoPath;
+    private AuthViewModel authViewModel;
+    private TextView textNombre, textEmail, textTelefono, textDireccion, textTipoSangre,
+            textFechaNacimiento, textGenero, textAlergias, textCondicionesMedicas, textMedicamentos;
+    private Button btnEditarPerfil;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        perfilViewModel = new ViewModelProvider(this).get(PerfilViewModel.class);
+    private static final String TAG = "PerfilFragment";
 
-        binding = FragmentPerfilBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_perfil, container, false);
 
-        configurarLaunchers();
-        configurarObservadores();
+        Log.d(TAG, "🎯 onCreateView - Inicializando vistas...");
+
+        inicializarVistas(view);
+        configurarViewModel();
         configurarBotones();
 
-        return root;
+        return view;
     }
 
-    private void configurarLaunchers() {
-        galleryLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == getActivity().RESULT_OK) {
-                        Intent data = result.getData();
-                        if (data != null) {
-                            Uri selectedImage = data.getData();
-                            procesarImagenSeleccionada(selectedImage);
-                        }
-                    }
-                });
-
-        cameraLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == getActivity().RESULT_OK) {
-                        File imgFile = new File(currentPhotoPath);
-                        if (imgFile.exists()) {
-                            cargarFotoDesdeArchivo(currentPhotoPath);
-                            guardarRutaFotoEnBD(currentPhotoPath);
-                        }
-                    }
-                });
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "🔍 onViewCreated - Observando datos del usuario...");
+        // Ya no llamamos cargarDatosUsuario() aquí, el observador se encarga
     }
 
-    private void configurarObservadores() {
-        perfilViewModel.getPaciente().observe(getViewLifecycleOwner(), pacienteEntity -> {
-            if (pacienteEntity != null) {
-                PerfilViewModel.Paciente paciente = new PerfilViewModel.Paciente(pacienteEntity);
-                actualizarUI(paciente);
-            } else {
-                crearPacientePorDefecto();
-            }
-        });
+    private void inicializarVistas(View view) {
+        try {
+            textNombre = view.findViewById(R.id.text_nombre_completo);
+            textEmail = view.findViewById(R.id.text_email);
+            textTelefono = view.findViewById(R.id.text_telefono);
+            textDireccion = view.findViewById(R.id.text_direccion);
+            textTipoSangre = view.findViewById(R.id.text_tipo_sangre);
+            textFechaNacimiento = view.findViewById(R.id.text_fecha_nacimiento);
+            textGenero = view.findViewById(R.id.text_genero);
+            textAlergias = view.findViewById(R.id.text_alergias);
+            textCondicionesMedicas = view.findViewById(R.id.text_condiciones_medicas);
+            textMedicamentos = view.findViewById(R.id.text_medicamentos);
+            btnEditarPerfil = view.findViewById(R.id.btn_editar_perfil);
+
+            Log.d(TAG, "✅ Vistas inicializadas correctamente");
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error inicializando vistas: " + e.getMessage());
+            Toast.makeText(getContext(), "Error al cargar interfaz", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void configurarViewModel() {
+        try {
+            authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
+            Log.d(TAG, "✅ ViewModel configurado correctamente");
+
+            // ✅ ✅ ✅ OBSERVADOR PRINCIPAL - ÚNICA FUENTE DE VERDAD
+            authViewModel.getUsuarioActualLiveData().observe(getViewLifecycleOwner(), usuario -> {
+                Log.d(TAG, "👀 OBSERVADOR PRINCIPAL ACTIVADO");
+
+                if (usuario != null) {
+                    Log.d(TAG, "✅✅✅ USUARIO RECIBIDO EN FRAGMENT:");
+                    Log.d(TAG, "   - Email: " + usuario.email);
+                    Log.d(TAG, "   - Nombre: " + usuario.nombreCompleto);
+                    Log.d(TAG, "   - Teléfono: " + usuario.telefono);
+                    Log.d(TAG, "   - Dirección: " + usuario.direccion);
+                    Log.d(TAG, "   - Tipo sangre: " + usuario.tipoSangre);
+
+                    mostrarDatosUsuario(usuario);
+                } else {
+                    Log.e(TAG, "❌ USUARIO ES NULL EN OBSERVADOR");
+                    mostrarUsuarioNoDisponible();
+                }
+            });
+
+            // ✅ OBSERVADOR PARA ACTUALIZACIONES DE PERFIL
+            authViewModel.getPerfilActualizado().observe(getViewLifecycleOwner(), exito -> {
+                Log.d(TAG, "👀 OBSERVADOR ACTUALIZACIÓN ACTIVADO: " + exito);
+
+                if (exito != null && exito) {
+                    Log.d(TAG, "✅✅✅ ACTUALIZACIÓN EXITOSA - RECARGANDO DATOS");
+                    Toast.makeText(getContext(), "✅ Perfil actualizado correctamente", Toast.LENGTH_SHORT).show();
+                } else if (exito != null) {
+                    Log.e(TAG, "❌ ACTUALIZACIÓN FALLIDA");
+                    Toast.makeText(getContext(), "❌ Error al actualizar perfil", Toast.LENGTH_LONG).show();
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error configurando ViewModel: " + e.getMessage());
+        }
     }
 
     private void configurarBotones() {
-        binding.imagePerfil.setOnClickListener(v -> {
-            mostrarDialogoSeleccionFoto();
-        });
-
-        binding.btnEditarPerfil.setOnClickListener(v -> {
-            abrirDialogoEdicion();
-        });
-
-        binding.btnExportarDatos.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Exportando datos médicos...", Toast.LENGTH_SHORT).show();
+        btnEditarPerfil.setOnClickListener(v -> {
+            Log.d(TAG, "✏️ Botón editar perfil presionado");
+            abrirDialogoEditarPerfil();
         });
     }
 
-    private void mostrarDialogoSeleccionFoto() {
-        String[] opciones = {"Tomar foto", "Elegir de galería", "Cancelar"};
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Seleccionar foto de perfil");
-        builder.setItems(opciones, (dialog, which) -> {
-            switch (which) {
-                case 0:
-                    tomarFoto();
-                    break;
-                case 1:
-                    elegirDeGaleria();
-                    break;
-            }
-        });
-        builder.show();
-    }
-
-    private void tomarFoto() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-            File photoFile = null;
-            try {
-                photoFile = crearArchivoImagen();
-            } catch (IOException ex) {
-                Toast.makeText(getContext(), "Error al crear archivo", Toast.LENGTH_SHORT).show();
-            }
-
-            if (photoFile != null) {
-                currentPhotoPath = photoFile.getAbsolutePath();
-                Uri photoURI = Uri.fromFile(photoFile);
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                cameraLauncher.launch(takePictureIntent);
-            }
-        }
-    }
-
-    private void elegirDeGaleria() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        galleryLauncher.launch(intent);
-    }
-
-    private File crearArchivoImagen() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = getActivity().getExternalFilesDir(null);
-        File image = File.createTempFile(imageFileName, ".jpg", storageDir);
-        currentPhotoPath = image.getAbsolutePath();
-        return image;
-    }
-
-    private void procesarImagenSeleccionada(Uri imageUri) {
+    private void mostrarDatosUsuario(UsuarioEntity usuario) {
         try {
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageUri);
-            guardarFotoYActualizar(bitmap);
-        } catch (IOException e) {
-            Toast.makeText(getContext(), "Error al cargar imagen", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "📊 Mostrando datos en interfaz:");
+
+            textNombre.setText(validarCampo(usuario.nombreCompleto));
+            textEmail.setText(validarCampo(usuario.email));
+            textTelefono.setText(validarCampo(usuario.telefono));
+            textDireccion.setText(validarCampo(usuario.direccion));
+            textTipoSangre.setText(validarCampo(usuario.tipoSangre));
+            textFechaNacimiento.setText(validarCampo(usuario.fechaNacimiento));
+            textGenero.setText(validarCampo(usuario.genero));
+            textAlergias.setText(validarCampo(usuario.alergias));
+            textCondicionesMedicas.setText(validarCampo(usuario.condicionesMedicas));
+            textMedicamentos.setText(validarCampo(usuario.medicamentosActuales));
+
+            Log.d(TAG, "✅✅✅ INTERFAZ ACTUALIZADA CORRECTAMENTE");
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error mostrando datos: " + e.getMessage());
+            Toast.makeText(getContext(), "Error al mostrar datos", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void cargarFotoDesdeArchivo(String path) {
-        File imgFile = new File(path);
-        if (imgFile.exists()) {
-            Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
-            binding.imagePerfil.setImageBitmap(bitmap);
+    private String validarCampo(String valor) {
+        if (valor == null || valor.isEmpty() || valor.equals("null")) {
+            return "No disponible";
         }
+        return valor;
     }
 
-    private void guardarFotoYActualizar(Bitmap bitmap) {
+    private void mostrarUsuarioNoDisponible() {
         try {
-            File file = crearArchivoImagen();
-            FileOutputStream out = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
-            out.flush();
-            out.close();
+            textNombre.setText("No disponible");
+            textEmail.setText("No disponible");
+            textTelefono.setText("No disponible");
+            textDireccion.setText("No disponible");
+            textTipoSangre.setText("No disponible");
+            textFechaNacimiento.setText("No disponible");
+            textGenero.setText("No disponible");
+            textAlergias.setText("No disponible");
+            textCondicionesMedicas.setText("No disponible");
+            textMedicamentos.setText("No disponible");
 
-            binding.imagePerfil.setImageBitmap(bitmap);
-            guardarRutaFotoEnBD(file.getAbsolutePath());
+            Log.d(TAG, "⚠️ Mostrando estado 'No disponible'");
 
-        } catch (IOException e) {
-            Toast.makeText(getContext(), "Error al guardar foto", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error en mostrarUsuarioNoDisponible: " + e.getMessage());
         }
     }
 
-    private void guardarRutaFotoEnBD(String path) {
-        PerfilViewModel.Paciente pacienteActual = null;
-        if (perfilViewModel.getPaciente().getValue() != null) {
-            pacienteActual = new PerfilViewModel.Paciente(perfilViewModel.getPaciente().getValue());
+    private void abrirDialogoEditarPerfil() {
+        try {
+            Log.d(TAG, "🔄 Abriendo diálogo de edición...");
 
-            PacienteEntity entity = new PacienteEntity();
-            entity.id = pacienteActual.getId();
-            entity.nombreCompleto = pacienteActual.getNombreCompleto();
-            entity.email = pacienteActual.getEmail();
-            entity.fechaNacimiento = pacienteActual.getFechaNacimiento();
-            entity.genero = pacienteActual.getGenero();
-            entity.telefono = pacienteActual.getTelefono();
-            entity.direccion = pacienteActual.getDireccion();
-            entity.tipoSangre = pacienteActual.getTipoSangre();
-            entity.alergias = pacienteActual.getAlergias();
-            entity.condicionesMedicas = pacienteActual.getCondicionesMedicas();
-            entity.medicamentos = pacienteActual.getMedicamentos();
-            entity.fotoPath = path;
+            UsuarioEntity usuarioActual = authViewModel.getUsuarioActualLiveData().getValue();
 
-            perfilViewModel.actualizarPaciente(entity);
-            Toast.makeText(getContext(), "Foto actualizada", Toast.LENGTH_SHORT).show();
-        }
-    }
+            if (usuarioActual != null) {
+                Log.d(TAG, "✅ Usuario actual obtenido para edición:");
+                Log.d(TAG, "   - Nombre: " + usuarioActual.nombreCompleto);
+                Log.d(TAG, "   - Email: " + usuarioActual.email);
+                Log.d(TAG, "   - Teléfono: " + usuarioActual.telefono);
 
-    private void actualizarUI(PerfilViewModel.Paciente paciente) {
-        if (paciente != null) {
-            binding.textNombreCompleto.setText(paciente.getNombreCompleto());
-            binding.textEmail.setText(paciente.getEmail());
-            binding.textFechaNacimiento.setText(paciente.getFechaNacimiento() != null ? paciente.getFechaNacimiento() : "No especificado");
-            binding.textGenero.setText(paciente.getGenero() != null ? paciente.getGenero() : "No especificado");
-            binding.textTelefono.setText(paciente.getTelefono() != null ? paciente.getTelefono() : "No especificado");
-            binding.textDireccion.setText(paciente.getDireccion() != null ? paciente.getDireccion() : "No especificada");
-            binding.textTipoSangre.setText(paciente.getTipoSangre() != null ? paciente.getTipoSangre() : "No especificado");
-            binding.textAlergias.setText(paciente.getAlergias() != null ? paciente.getAlergias() : "Ninguna registrada");
-            binding.textCondicionesMedicas.setText(paciente.getCondicionesMedicas() != null ? paciente.getCondicionesMedicas() : "Ninguna registrada");
-            binding.textMedicamentos.setText(paciente.getMedicamentos() != null ? paciente.getMedicamentos() : "Ninguno registrado");
+                EditarPerfilDialogFragment dialog = EditarPerfilDialogFragment.newInstance(usuarioActual);
 
-            if (paciente.getFotoPath() != null && !paciente.getFotoPath().isEmpty()) {
-                cargarFotoDesdeArchivo(paciente.getFotoPath());
+                dialog.setEditarPerfilListener(usuarioActualizado -> {
+                    Log.d(TAG, "🎯 Listener del diálogo activado");
+                    if (usuarioActualizado != null) {
+                        Log.d(TAG, "📤 Enviando datos actualizados al ViewModel");
+                        Log.d(TAG, "   - Nuevo nombre: " + usuarioActualizado.nombreCompleto);
+                        Log.d(TAG, "   - Nuevo teléfono: " + usuarioActualizado.telefono);
+                        Log.d(TAG, "   - Nueva dirección: " + usuarioActualizado.direccion);
+
+                        authViewModel.actualizarPerfilCompleto(usuarioActualizado);
+                    } else {
+                        Log.e(TAG, "❌ usuarioActualizado es NULL en el listener");
+                        Toast.makeText(getContext(), "Error: Datos inválidos", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                dialog.show(getParentFragmentManager(), "EditarPerfilDialog");
+                Log.d(TAG, "✅ Diálogo mostrado correctamente");
+
+            } else {
+                Log.e(TAG, "❌ No se pudo obtener usuario actual para editar");
+                Toast.makeText(getContext(), "Error: No se pueden cargar los datos", Toast.LENGTH_SHORT).show();
             }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error abriendo diálogo: " + e.getMessage());
+            Toast.makeText(getContext(), "Error al abrir editor", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void crearPacientePorDefecto() {
-        PacienteEntity paciente = new PacienteEntity();
-        paciente.nombreCompleto = "Jose Mauricio Chavarria Gonzalez";
-        paciente.email = "mauriciochavarria@gmail.com";
-        paciente.fechaNacimiento = "2000-05-19";
-        paciente.genero = "Masculino";
-        paciente.telefono = "76757575";
-        paciente.direccion = "Managua, Nicaragua";
-        paciente.tipoSangre = "O+";
-        paciente.alergias = "Penicilina, Polvo";
-        paciente.condicionesMedicas = "Hipertensión, Diabetes tipo 2";
-        paciente.medicamentos = "Losartan 50mg, Metformina 500mg";
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d(TAG, "🔍 onResume - Forzando recarga de datos...");
 
-        perfilViewModel.insertarPaciente(paciente);
-    }
-
-    private void abrirDialogoEdicion() {
-        PerfilViewModel.Paciente pacienteActual = null;
-        if (perfilViewModel.getPaciente().getValue() != null) {
-            pacienteActual = new PerfilViewModel.Paciente(perfilViewModel.getPaciente().getValue());
+        if (authViewModel != null) {
+            authViewModel.getUsuarioActualLiveData().observe(getViewLifecycleOwner(), usuario -> {
+                // El observador principal actualiza la UI automáticamente
+            });
         }
-
-        EditarPerfilDialogFragment dialog = new EditarPerfilDialogFragment();
-        dialog.setPacienteActual(pacienteActual);
-        dialog.setOnPerfilActualizadoListener(pacienteActualizado -> {
-            PacienteEntity entity = new PacienteEntity();
-            entity.id = pacienteActualizado.getId();
-            entity.nombreCompleto = pacienteActualizado.getNombreCompleto();
-            entity.email = pacienteActualizado.getEmail();
-            entity.fechaNacimiento = pacienteActualizado.getFechaNacimiento();
-            entity.genero = pacienteActualizado.getGenero();
-            entity.telefono = pacienteActualizado.getTelefono();
-            entity.direccion = pacienteActualizado.getDireccion();
-            entity.tipoSangre = pacienteActualizado.getTipoSangre();
-            entity.alergias = pacienteActualizado.getAlergias();
-            entity.condicionesMedicas = pacienteActualizado.getCondicionesMedicas();
-            entity.medicamentos = pacienteActualizado.getMedicamentos();
-            entity.fotoPath = pacienteActualizado.getFotoPath();
-
-            perfilViewModel.actualizarPaciente(entity);
-            Toast.makeText(getContext(), "Perfil actualizado exitosamente", Toast.LENGTH_SHORT).show();
-        });
-        dialog.show(getParentFragmentManager(), "EditarPerfilDialog");
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
+        Log.d(TAG, "🔚 onDestroyView - Limpiando recursos...");
     }
 }

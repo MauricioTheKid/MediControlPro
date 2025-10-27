@@ -21,6 +21,8 @@ import com.example.medicontrolpro.databinding.ActivityMainBinding;
 import com.example.medicontrolpro.utils.NotificationHelper;
 import com.example.medicontrolpro.ui.auth.AuthViewModel;
 import com.example.medicontrolpro.ui.auth.LoginActivity;
+import com.example.medicontrolpro.ui.maps.MapaActivity; // ✅ IMPORT AGREGADO
+import com.google.firebase.auth.FirebaseAuth;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,15 +34,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Verificar autenticación antes de inicializar la UI
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-        if (!authViewModel.isLoggedIn()) {
+        // ✅ VERIFICACIÓN CORREGIDA - Usando FirebaseAuth directamente
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             startLoginActivity();
             return;
         }
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // Inicializar ViewModel después de verificar autenticación
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         // Crear canal de notificaciones
         NotificationHelper.createNotificationChannel(this);
@@ -57,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         DrawerLayout drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
 
-        // Passing each menu ID as a set of Ids because each
+        // Passing each menu ID as set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_home, R.id.nav_citas, R.id.nav_expediente, R.id.nav_doctores, R.id.nav_perfil)
@@ -80,7 +84,22 @@ public class MainActivity extends AppCompatActivity {
         // Handle action bar item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.action_logout) {
+        if (id == R.id.action_settings) {
+            // Configuraciones
+            Snackbar.make(binding.getRoot(), "Configuraciones - Próximamente", Snackbar.LENGTH_SHORT).show();
+            return true;
+
+        } else if (id == R.id.action_mapa) {
+            // ✅ NUEVO: Navegar al mapa
+            try {
+                Intent mapaIntent = new Intent(this, MapaActivity.class);
+                startActivity(mapaIntent);
+            } catch (Exception e) {
+                Snackbar.make(binding.getRoot(), "Error al abrir el mapa", Snackbar.LENGTH_SHORT).show();
+            }
+            return true;
+
+        } else if (id == R.id.action_logout) {
             logout();
             return true;
         }
@@ -95,8 +114,10 @@ public class MainActivity extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
+    // ✅ MÉTODO LOGOUT CORREGIDO
     private void logout() {
-        authViewModel.logout();
+        // Cerrar sesión en Firebase Auth directamente
+        FirebaseAuth.getInstance().signOut();
         startLoginActivity();
     }
 

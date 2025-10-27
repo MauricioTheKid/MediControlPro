@@ -1,3 +1,4 @@
+// data/DatabaseClient.java (asegurar migración)
 package com.example.medicontrolpro.data;
 
 import android.content.Context;
@@ -9,7 +10,7 @@ public class DatabaseClient {
 
     private DatabaseClient(Context context) {
         appDatabase = Room.databaseBuilder(context, AppDatabase.class, "medicontrol_db")
-                .fallbackToDestructiveMigration() // ← ESTO ELIMINA Y RECREA LA BD
+                .fallbackToDestructiveMigration() // ← IMPORTANTE: Elimina y recrea la BD
                 .build();
     }
 

@@ -8,6 +8,14 @@
         android:title="@string/action_settings"
         app:showAsAction="never" />
 
+    <!-- ✅ NUEVA OPCIÓN PARA MAPA -->
+    <item
+        android:id="@+id/action_mapa"
+        android:orderInCategory="150"
+        android:title="Ubicación"
+        android:icon="@drawable/ic_map"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/action_logout"
         android:orderInCategory="200"

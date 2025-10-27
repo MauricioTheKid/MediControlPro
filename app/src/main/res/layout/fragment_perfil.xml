@@ -12,6 +12,22 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- ✅ NUEVO: Indicador de Estado de Sincronización -->
+        <TextView
+            android:id="@+id/text_estado_sincronizacion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:gravity="center"
+            android:text="⚠️ Sincronización pendiente - Sin conexión"
+            android:background="@color/orange_light"
+            android:textColor="@color/black"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:textStyle="bold" />
+
         <!-- Header con foto de perfil -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -33,7 +49,9 @@
                 android:focusable="true"
                 android:layout_marginBottom="8dp" />
 
+            <!-- ✅ AGREGADO ID: text_cambiar_foto -->
             <TextView
+                android:id="@+id/text_cambiar_foto"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Cambiar foto"
