@@ -76,4 +76,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.karumi:dexter:6.2.3") // Para manejo fácil de permisos
+
+    // ✅ NUEVA DEPENDENCIA: Glide para cargar imágenes
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

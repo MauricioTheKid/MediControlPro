@@ -41,6 +41,7 @@ public class UsuarioRepository {
 
                 if (usuario != null) {
                     Log.d(TAG, "✅ Usuario encontrado (async): " + usuario.email);
+                    Log.d(TAG, "   - Foto: " + usuario.fotoPerfil);
                 } else {
                     Log.w(TAG, "⚠️ Usuario NO encontrado (async), creando: " + email);
 
@@ -49,6 +50,7 @@ public class UsuarioRepository {
                     nuevoUsuario.email = email;
                     nuevoUsuario.nombreCompleto = "Usuario";
                     nuevoUsuario.sincronizado = false;
+                    nuevoUsuario.fotoPerfil = ""; // ✅ INICIALIZAR FOTO
 
                     usuarioDao.insert(nuevoUsuario);
                     Log.d(TAG, "✅ Nuevo usuario creado (async): " + email);
@@ -77,15 +79,17 @@ public class UsuarioRepository {
 
             if (usuario != null) {
                 Log.d(TAG, "✅ Usuario encontrado (sync): " + usuario.email);
+                Log.d(TAG, "   - Foto: " + usuario.fotoPerfil);
                 return usuario;
             } else {
                 Log.w(TAG, "⚠️ Usuario NO encontrado (sync), creando: " + email);
 
-                // ✅✅✅ CREAR USUARIO SI NO EXISTE - ESTO FALTABA
+                // ✅✅✅ CREAR USUARIO SI NO EXISTE
                 UsuarioEntity nuevoUsuario = new UsuarioEntity();
                 nuevoUsuario.email = email;
                 nuevoUsuario.nombreCompleto = "Usuario";
                 nuevoUsuario.sincronizado = false;
+                nuevoUsuario.fotoPerfil = ""; // ✅ INICIALIZAR FOTO
 
                 usuarioDao.insert(nuevoUsuario);
                 Log.d(TAG, "✅ Nuevo usuario creado (sync): " + email);
@@ -105,34 +109,39 @@ public class UsuarioRepository {
             try {
                 usuarioDao.insert(usuario);
                 Log.d(TAG, "✅ Usuario insertado: " + usuario.email);
+                Log.d(TAG, "   - Foto: " + usuario.fotoPerfil);
             } catch (Exception e) {
                 Log.e(TAG, "❌ Error insertando usuario: " + e.getMessage());
             }
         });
     }
 
+    // ✅✅✅ MÉTODO ACTUALIZADO - INCLUYE fotoPerfil Y ORDEN CORRECTO
     public void actualizarPerfil(UsuarioEntity usuario) {
         executorService.execute(() -> {
             try {
+                // ✅ ORDEN CORRECTO SEGÚN EL DAO ACTUALIZADO
                 usuarioDao.actualizarPerfil(
-                        usuario.email,
-                        usuario.nombreCompleto,
-                        usuario.telefono,
-                        usuario.direccion,
-                        usuario.tipoSangre,
-                        usuario.fechaNacimiento,
-                        usuario.genero,
-                        usuario.alergias,
-                        usuario.condicionesMedicas,
-                        usuario.medicamentosActuales,
-                        usuario.sincronizado
+                        usuario.nombreCompleto,        // 1. nombreCompleto
+                        usuario.telefono,              // 2. telefono
+                        usuario.direccion,             // 3. direccion
+                        usuario.tipoSangre,            // 4. tipoSangre
+                        usuario.fechaNacimiento,       // 5. fechaNacimiento
+                        usuario.genero,                // 6. genero
+                        usuario.alergias,              // 7. alergias
+                        usuario.condicionesMedicas,    // 8. condicionesMedicas
+                        usuario.medicamentosActuales,  // 9. medicamentosActuales
+                        usuario.fotoPerfil,            // 10. fotoPerfil ✅ NUEVO PARÁMETRO
+                        usuario.sincronizado,          // 11. sincronizado
+                        usuario.email                  // 12. email
                 );
-                Log.d(TAG, "✅ Perfil actualizado: " + usuario.email);
+                Log.d(TAG, "✅✅✅ PERFIL ACTUALIZADO CORRECTAMENTE: " + usuario.email);
                 Log.d(TAG, "   - Nombre: " + usuario.nombreCompleto);
                 Log.d(TAG, "   - Teléfono: " + usuario.telefono);
                 Log.d(TAG, "   - Dirección: " + usuario.direccion);
+                Log.d(TAG, "   - Foto: " + usuario.fotoPerfil); // ✅ LOG DE LA FOTO
             } catch (Exception e) {
-                Log.e(TAG, "❌ Error actualizando perfil: " + e.getMessage());
+                Log.e(TAG, "❌❌❌ ERROR actualizando perfil: " + e.getMessage());
             }
         });
     }

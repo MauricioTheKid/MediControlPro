@@ -18,17 +18,31 @@ public interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE email = :email")
     UsuarioEntity getUsuarioByEmail(String email);
 
+    @Query("SELECT * FROM usuarios WHERE email = :email")
+    LiveData<UsuarioEntity> getUsuarioByEmailLiveData(String email);
+
     @Query("SELECT * FROM usuarios")
     LiveData<List<UsuarioEntity>> getAllUsuarios();
 
-    @Query("UPDATE usuarios SET nombreCompleto = :nombreCompleto, telefono = :telefono, " +
-            "direccion = :direccion, tipoSangre = :tipoSangre, fechaNacimiento = :fechaNacimiento, " +
-            "genero = :genero, alergias = :alergias, condicionesMedicas = :condicionesMedicas, " +
-            "medicamentosActuales = :medicamentosActuales, sincronizado = :sincronizado " +
+    // ✅ CONSULTA CORREGIDA - VERIFICA EL NOMBRE EXACTO DE LA COLUMNA
+    @Query("UPDATE usuarios SET " +
+            "nombreCompleto = :nombreCompleto, " +
+            "telefono = :telefono, " +
+            "direccion = :direccion, " +
+            "tipoSangre = :tipoSangre, " +
+            "fechaNacimiento = :fechaNacimiento, " +
+            "genero = :genero, " +
+            "alergias = :alergias, " +
+            "condicionesMedicas = :condicionesMedicas, " +
+            "medicamentosActuales = :medicamentosActuales, " +
+            "foto_perfil = :fotoPerfil, " + // ✅ USA "foto_perfil" (nombre de la columna en Room)
+            "sincronizado = :sincronizado " +
             "WHERE email = :email")
-    void actualizarPerfil(String email, String nombreCompleto, String telefono, String direccion,
-                          String tipoSangre, String fechaNacimiento, String genero, String alergias,
-                          String condicionesMedicas, String medicamentosActuales, boolean sincronizado);
+    void actualizarPerfil(String nombreCompleto, String telefono, String direccion,
+                          String tipoSangre, String fechaNacimiento, String genero,
+                          String alergias, String condicionesMedicas,
+                          String medicamentosActuales, String fotoPerfil,
+                          boolean sincronizado, String email);
 
     @Delete
     void delete(UsuarioEntity usuario);

@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -47,6 +48,8 @@ public class DoctorDialogFragment extends DialogFragment {
     private String currentPhotoPath;
     private String fotoPathSeleccionada;
 
+    private static final String TAG = "DoctorDialogFragment";
+
     public static DoctorDialogFragment newInstance(DoctorEntity doctor) {
         DoctorDialogFragment fragment = new DoctorDialogFragment();
         Bundle args = new Bundle();
@@ -58,7 +61,7 @@ public class DoctorDialogFragment extends DialogFragment {
             args.putString("direccion", doctor.direccion);
             args.putString("horarios", doctor.horarios);
             args.putString("notas", doctor.notasPaciente);
-            args.putString("fotoPath", doctor.fotoPath);
+            args.putString("fotoPath", doctor.fotoPath); // ✅ GUARDAR FOTO PATH CORRECTAMENTE
             args.putInt("id", doctor.id);
         }
         fragment.setArguments(args);
@@ -96,6 +99,7 @@ public class DoctorDialogFragment extends DialogFragment {
                         if (imgFile.exists()) {
                             cargarFotoDesdeArchivo(currentPhotoPath);
                             fotoPathSeleccionada = currentPhotoPath;
+                            Log.d(TAG, "✅ Foto tomada con cámara: " + currentPhotoPath);
                         }
                     }
                 });
@@ -142,11 +146,12 @@ public class DoctorDialogFragment extends DialogFragment {
             editHorarios.setText(args.getString("horarios", ""));
             editNotas.setText(args.getString("notas", ""));
 
-            // Cargar foto existente si existe
+            // ✅ CARGAR FOTO EXISTENTE CORRECTAMENTE
             String fotoPath = args.getString("fotoPath", "");
             if (fotoPath != null && !fotoPath.isEmpty()) {
                 cargarFotoDesdeArchivo(fotoPath);
                 fotoPathSeleccionada = fotoPath;
+                Log.d(TAG, "✅ Foto existente cargada: " + fotoPath);
             }
         }
     }
@@ -193,6 +198,7 @@ public class DoctorDialogFragment extends DialogFragment {
                 photoFile = crearArchivoImagen();
             } catch (IOException ex) {
                 Toast.makeText(getContext(), "Error al crear archivo", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "❌ Error al crear archivo de imagen: " + ex.getMessage());
             }
 
             if (photoFile != null) {
@@ -200,6 +206,7 @@ public class DoctorDialogFragment extends DialogFragment {
                 Uri photoURI = Uri.fromFile(photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 cameraLauncher.launch(takePictureIntent);
+                Log.d(TAG, "📸 Iniciando cámara con ruta: " + currentPhotoPath);
             }
         }
     }
@@ -207,6 +214,7 @@ public class DoctorDialogFragment extends DialogFragment {
     private void elegirDeGaleria() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryLauncher.launch(intent);
+        Log.d(TAG, "🖼️ Abriendo galería para seleccionar foto");
     }
 
     private File crearArchivoImagen() throws IOException {
@@ -222,8 +230,10 @@ public class DoctorDialogFragment extends DialogFragment {
         try {
             Bitmap bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageUri);
             guardarFotoYActualizar(bitmap);
+            Log.d(TAG, "✅ Imagen de galería procesada correctamente");
         } catch (IOException e) {
             Toast.makeText(getContext(), "Error al cargar imagen", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "❌ Error al procesar imagen de galería: " + e.getMessage());
         }
     }
 
@@ -232,6 +242,9 @@ public class DoctorDialogFragment extends DialogFragment {
         if (imgFile.exists()) {
             Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
             fotoDoctorDialog.setImageBitmap(bitmap);
+            Log.d(TAG, "🖼️ Foto cargada desde archivo: " + path);
+        } else {
+            Log.w(TAG, "⚠️ Archivo de foto no existe: " + path);
         }
     }
 
@@ -246,8 +259,11 @@ public class DoctorDialogFragment extends DialogFragment {
             fotoDoctorDialog.setImageBitmap(bitmap);
             fotoPathSeleccionada = file.getAbsolutePath();
 
+            Log.d(TAG, "✅✅✅ FOTO GUARDADA CORRECTAMENTE: " + fotoPathSeleccionada);
+
         } catch (IOException e) {
             Toast.makeText(getContext(), "Error al guardar foto", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "❌ Error al guardar foto: " + e.getMessage());
         }
     }
 
@@ -283,16 +299,22 @@ public class DoctorDialogFragment extends DialogFragment {
         Bundle args = getArguments();
         int id = args != null ? args.getInt("id", 0) : 0;
 
+        // ✅✅✅ CORREGIDO: Crear doctor con fotoPath separado
         DoctoresViewModel.Doctor nuevoDoctor = new DoctoresViewModel.Doctor(
                 id, nombre, especialidad, telefono, email, direccion, horarios, false, 0f, notas
         );
 
-        // Agregar la ruta de la foto al objeto doctor
+        // ✅✅✅ CORREGIDO: Asignar fotoPath al campo correcto
         if (fotoPathSeleccionada != null && !fotoPathSeleccionada.isEmpty()) {
-            // Podemos almacenar la ruta en las notas temporalmente
-            // O crear un campo adicional en DoctoresViewModel.Doctor
-            nuevoDoctor.notasPaciente = notas + "|FOTO_PATH:" + fotoPathSeleccionada;
+            nuevoDoctor.setFotoPath(fotoPathSeleccionada); // ✅ USAR SETTER CORRECTO
+            Log.d(TAG, "✅ Foto asignada al doctor: " + fotoPathSeleccionada);
         }
+
+        Log.d(TAG, "✅✅✅ DOCTOR GUARDADO CORRECTAMENTE:");
+        Log.d(TAG, "   - Nombre: " + nombre);
+        Log.d(TAG, "   - Especialidad: " + especialidad);
+        Log.d(TAG, "   - Foto: " + (fotoPathSeleccionada != null ? fotoPathSeleccionada : "Sin foto"));
+        Log.d(TAG, "   - Notas: " + notas);
 
         if (listener != null) {
             listener.onDoctorGuardada(nuevoDoctor);

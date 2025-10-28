@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -26,9 +27,14 @@ public class UsuarioEntity implements Parcelable {
     public String medicamentosActuales;
     public boolean sincronizado;
 
+    // ✅ NUEVO CAMPO: Foto de perfil
+    @ColumnInfo(name = "foto_perfil")
+    public String fotoPerfil;
+
     public UsuarioEntity() {
         // Constructor vacío necesario para Room
         this.email = ""; // Inicializar con valor por defecto
+        this.fotoPerfil = ""; // Inicializar como string vacío
     }
 
     // Constructor para crear usuarios fácilmente
@@ -37,6 +43,7 @@ public class UsuarioEntity implements Parcelable {
         this.nombreCompleto = nombreCompleto != null ? nombreCompleto : "Usuario";
         this.password = "";
         this.sincronizado = false;
+        this.fotoPerfil = ""; // Inicializar como string vacío
     }
 
     protected UsuarioEntity(Parcel in) {
@@ -52,6 +59,7 @@ public class UsuarioEntity implements Parcelable {
         condicionesMedicas = in.readString();
         medicamentosActuales = in.readString();
         sincronizado = in.readByte() != 0;
+        fotoPerfil = in.readString(); // ✅ NUEVO: Leer fotoPerfil
     }
 
     public static final Creator<UsuarioEntity> CREATOR = new Creator<UsuarioEntity>() {
@@ -85,6 +93,7 @@ public class UsuarioEntity implements Parcelable {
         dest.writeString(condicionesMedicas);
         dest.writeString(medicamentosActuales);
         dest.writeByte((byte) (sincronizado ? 1 : 0));
+        dest.writeString(fotoPerfil); // ✅ NUEVO: Escribir fotoPerfil
     }
 
     // Getters y Setters útiles
@@ -183,5 +192,14 @@ public class UsuarioEntity implements Parcelable {
 
     public void setSincronizado(boolean sincronizado) {
         this.sincronizado = sincronizado;
+    }
+
+    // ✅ NUEVO: Getter y Setter para fotoPerfil
+    public String getFotoPerfil() {
+        return fotoPerfil;
+    }
+
+    public void setFotoPerfil(String fotoPerfil) {
+        this.fotoPerfil = fotoPerfil;
     }
 }

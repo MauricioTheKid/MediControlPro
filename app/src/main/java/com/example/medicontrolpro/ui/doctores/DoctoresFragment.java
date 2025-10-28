@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,8 @@ public class DoctoresFragment extends Fragment {
     private FragmentDoctoresBinding binding;
     private DoctoresViewModel doctoresViewModel;
     private DoctoresAdapter doctoresAdapter;
+
+    private static final String TAG = "DoctoresFragment";
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -167,6 +170,8 @@ public class DoctoresFragment extends Fragment {
                     entity.calificacion,
                     entity.notasPaciente
             );
+            // ✅ ASIGNAR FOTO PATH CORRECTAMENTE
+            doctor.setFotoPath(entity.fotoPath);
             doctores.add(doctor);
         }
         return doctores;
@@ -206,8 +211,14 @@ public class DoctoresFragment extends Fragment {
             doctorEntity.direccion = nuevoDoctor.getDireccion();
             doctorEntity.horarios = nuevoDoctor.getHorarios();
             doctorEntity.notasPaciente = nuevoDoctor.getNotasPaciente();
+            doctorEntity.fotoPath = nuevoDoctor.getFotoPath(); // ✅ GUARDAR FOTO PATH CORRECTAMENTE
 
             doctoresViewModel.insert(doctorEntity);
+            Log.d(TAG, "✅✅✅ NUEVO DOCTOR GUARDADO:");
+            Log.d(TAG, "   - Nombre: " + doctorEntity.nombre);
+            Log.d(TAG, "   - Foto: " + doctorEntity.fotoPath);
+            Log.d(TAG, "   - Notas: " + doctorEntity.notasPaciente);
+
             Toast.makeText(getContext(), "Doctor agregado exitosamente", Toast.LENGTH_SHORT).show();
         });
         dialog.show(getParentFragmentManager(), "NuevoDoctorDialog");
@@ -225,6 +236,7 @@ public class DoctoresFragment extends Fragment {
         doctorEntity.horarios = doctor.getHorarios();
         doctorEntity.notasPaciente = doctor.getNotasPaciente();
         doctorEntity.esFavorito = doctor.isEsFavorito();
+        doctorEntity.fotoPath = doctor.getFotoPath(); // ✅ GUARDAR FOTO PATH CORRECTAMENTE
 
         DoctorDialogFragment dialog = DoctorDialogFragment.newInstance(doctorEntity);
         dialog.setOnDoctorGuardadaListener(doctorEditado -> {
@@ -236,8 +248,14 @@ public class DoctoresFragment extends Fragment {
             doctorEntity.direccion = doctorEditado.getDireccion();
             doctorEntity.horarios = doctorEditado.getHorarios();
             doctorEntity.notasPaciente = doctorEditado.getNotasPaciente();
+            doctorEntity.fotoPath = doctorEditado.getFotoPath(); // ✅ ACTUALIZAR FOTO PATH CORRECTAMENTE
 
             doctoresViewModel.update(doctorEntity);
+            Log.d(TAG, "✅✅✅ DOCTOR ACTUALIZADO:");
+            Log.d(TAG, "   - Nombre: " + doctorEntity.nombre);
+            Log.d(TAG, "   - Foto: " + doctorEntity.fotoPath);
+            Log.d(TAG, "   - Notas: " + doctorEntity.notasPaciente);
+
             Toast.makeText(getContext(), "Doctor actualizado exitosamente", Toast.LENGTH_SHORT).show();
         });
         dialog.show(getParentFragmentManager(), "EditarDoctorDialog");

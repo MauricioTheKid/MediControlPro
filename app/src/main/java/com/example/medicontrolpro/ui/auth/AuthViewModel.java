@@ -32,7 +32,7 @@ public class AuthViewModel extends AndroidViewModel {
     private MutableLiveData<AuthResult> authResult = new MutableLiveData<>();
     private MutableLiveData<Boolean> perfilActualizado = new MutableLiveData<>();
     private MutableLiveData<UsuarioEntity> usuarioActual = new MutableLiveData<>();
-    private MutableLiveData<Boolean> sincronizacionPendiente = new MutableLiveData<>(); // ✅ NUEVO: Para Paso 8
+    private MutableLiveData<Boolean> sincronizacionPendiente = new MutableLiveData<>();
 
     private static final String TAG = "AuthViewModel";
     private static final String CREDENTIALS_FILE = "UserCredentials";
@@ -43,11 +43,9 @@ public class AuthViewModel extends AndroidViewModel {
         executorService = Executors.newSingleThreadExecutor();
         Log.d(TAG, "AuthViewModel inicializado");
 
-        // Cargar usuario actual al iniciar
         cargarUsuarioActual();
     }
 
-    // ✅ NUEVO PARA PASO 8: Verificar conexión a internet
     private boolean tieneConexionInternet() {
         try {
             ConnectivityManager cm = (ConnectivityManager) getApplication().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -61,9 +59,171 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // 🎯 ACTUALIZAR PERFIL COMPLETO (MODIFICADO PARA PASO 8 - SINCRONIZACIÓN OFFLINE)
+    // ✅ MÉTODO CORREGIDO - MANEJA RUTAS DE ARCHIVO
+    public void actualizarFotoPerfil(String filePath) {
+        Log.d(TAG, "🔄 INICIANDO ACTUALIZACIÓN DE FOTO - Ruta: " + filePath);
+
+        executorService.execute(() -> {
+            try {
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null && user.getEmail() != null) {
+                    String emailFirebase = user.getEmail();
+                    Log.d(TAG, "🔥 Actualizando foto para: " + emailFirebase);
+
+                    // ✅ OBTENER USUARIO ACTUAL CON TODOS SUS DATOS
+                    UsuarioEntity usuarioExistente = usuarioRepository.getUsuarioByEmailSync(emailFirebase);
+
+                    if (usuarioExistente == null) {
+                        Log.w(TAG, "⚠️ Usuario no encontrado en Room, creando nuevo usuario...");
+
+                        // ✅ CREAR NUEVO USUARIO MANTENIENDO LOS DATOS DEL USUARIO FIREBASE
+                        usuarioExistente = new UsuarioEntity();
+                        usuarioExistente.email = emailFirebase;
+                        usuarioExistente.nombreCompleto = user.getDisplayName() != null ? user.getDisplayName() : "Usuario";
+                        usuarioExistente.fotoPerfil = filePath; // ✅ GUARDAR RUTA DEL ARCHIVO
+                        usuarioExistente.sincronizado = false;
+
+                        usuarioRepository.insert(usuarioExistente);
+                        Log.d(TAG, "✅ Nuevo usuario creado en Room con foto");
+                    } else {
+                        // ✅ MANTENER TODOS LOS DATOS EXISTENTES, SOLO ACTUALIZAR FOTO
+                        Log.d(TAG, "📸 Usuario existente encontrado, actualizando SOLO la foto...");
+                        Log.d(TAG, "   - Nombre actual: " + usuarioExistente.nombreCompleto);
+                        Log.d(TAG, "   - Teléfono actual: " + usuarioExistente.telefono);
+                        Log.d(TAG, "   - Dirección actual: " + usuarioExistente.direccion);
+
+                        // ✅ SOLO ACTUALIZAR EL CAMPO DE FOTO, MANTENER EL RESTO
+                        String fotoAnterior = usuarioExistente.fotoPerfil;
+                        usuarioExistente.fotoPerfil = filePath; // ✅ GUARDAR RUTA DEL ARCHIVO
+                        usuarioRepository.actualizarPerfil(usuarioExistente);
+
+                        Log.d(TAG, "✅ Foto actualizada: " + fotoAnterior + " -> " + filePath);
+                        Log.d(TAG, "✅ Todos los demás campos preservados");
+                    }
+
+                    // ✅ VERIFICAR QUE SE MANTUVIERON LOS DATOS
+                    UsuarioEntity usuarioVerificado = usuarioRepository.getUsuarioByEmailSync(emailFirebase);
+                    if (usuarioVerificado != null) {
+                        Log.d(TAG, "✅✅✅ VERIFICACIÓN POST-ACTUALIZACIÓN:");
+                        Log.d(TAG, "   - Nombre: " + usuarioVerificado.nombreCompleto);
+                        Log.d(TAG, "   - Teléfono: " + usuarioVerificado.telefono);
+                        Log.d(TAG, "   - Dirección: " + usuarioVerificado.direccion);
+                        Log.d(TAG, "   - Foto: " + usuarioVerificado.fotoPerfil);
+
+                        if (usuarioVerificado.fotoPerfil != null && usuarioVerificado.fotoPerfil.equals(filePath)) {
+                            Log.d(TAG, "✅✅✅ FOTO GUARDADA CORRECTAMENTE EN ROOM");
+                        }
+                    }
+
+                    // VERIFICAR CONEXIÓN
+                    boolean tieneInternet = tieneConexionInternet();
+                    Log.d(TAG, "📶 Estado conexión: " + (tieneInternet ? "CONECTADO" : "OFFLINE"));
+
+                    // ✅ ACTUALIZAR LIVEDATA INMEDIATAMENTE
+                    UsuarioEntity usuarioRecargado = usuarioRepository.getUsuarioByEmailSync(emailFirebase);
+                    if (usuarioRecargado != null) {
+                        this.usuarioActual.postValue(usuarioRecargado);
+                        Log.d(TAG, "🎯 LiveData actualizado con datos COMPLETOS de Room");
+                    }
+
+                    if (tieneInternet) {
+                        // ✅ SINCRONIZAR SOLO LA FOTO CON FIRESTORE
+                        Log.d(TAG, "🔄 Sincronizando SOLO foto con Firestore...");
+                        boolean exitoFirestore = actualizarSoloFotoEnFirestore(emailFirebase, filePath, usuarioExistente);
+
+                        if (exitoFirestore) {
+                            Log.d(TAG, "✅✅✅ SINCRONIZACIÓN DE FOTO COMPLETA");
+                            actualizarEstadoSincronizacionRoom(emailFirebase, true);
+                            sincronizacionPendiente.postValue(false);
+                            mostrarToastEnUI("✅ Foto actualizada correctamente");
+
+                            perfilActualizado.postValue(true);
+                        } else {
+                            Log.w(TAG, "⚠️ Error sincronizando foto - Marcando como pendiente");
+                            actualizarEstadoSincronizacionRoom(emailFirebase, false);
+                            sincronizacionPendiente.postValue(true);
+                            mostrarToastEnUI("✅ Foto guardada local - Error de sincronización");
+
+                            perfilActualizado.postValue(true);
+                        }
+                    } else {
+                        Log.w(TAG, "📶 Sin conexión - Marcando como pendiente");
+                        actualizarEstadoSincronizacionRoom(emailFirebase, false);
+                        sincronizacionPendiente.postValue(true);
+                        mostrarToastEnUI("✅ Foto guardada local - Sincronizará con conexión");
+
+                        perfilActualizado.postValue(true);
+                    }
+
+                } else {
+                    Log.e(TAG, "❌ No hay usuario autenticado");
+                    mostrarToastEnUI("❌ No hay usuario autenticado");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "❌ ERROR actualizando foto: " + e.getMessage());
+                mostrarToastEnUI("❌ Error al actualizar foto");
+            }
+        });
+    }
+
+    // ✅ NUEVO MÉTODO: Actualizar solo la foto en Firestore sin afectar otros campos
+    private boolean actualizarSoloFotoEnFirestore(String email, String filePath, UsuarioEntity usuarioExistente) {
+        try {
+            Log.d(TAG, "🔄 FIRESTORE: Actualizando SOLO foto para: " + email);
+
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            Map<String, Object> updates = new HashMap<>();
+
+            // ✅ SOLO ACTUALIZAR LA FOTO Y CAMPOS DE CONTROL
+            updates.put("fotoPerfil", filePath != null ? filePath : "");
+            updates.put("fechaActualizacion", System.currentTimeMillis());
+            updates.put("sincronizado", true);
+
+            // ✅ PRESERVAR TODOS LOS DEMÁS CAMPOS EXISTENTES
+            if (usuarioExistente != null) {
+                updates.put("nombreCompleto", usuarioExistente.nombreCompleto != null ? usuarioExistente.nombreCompleto : "");
+                updates.put("telefono", usuarioExistente.telefono != null ? usuarioExistente.telefono : "");
+                updates.put("direccion", usuarioExistente.direccion != null ? usuarioExistente.direccion : "");
+                updates.put("tipoSangre", usuarioExistente.tipoSangre != null ? usuarioExistente.tipoSangre : "");
+                updates.put("fechaNacimiento", usuarioExistente.fechaNacimiento != null ? usuarioExistente.fechaNacimiento : "");
+                updates.put("genero", usuarioExistente.genero != null ? usuarioExistente.genero : "");
+                updates.put("alergias", usuarioExistente.alergias != null ? usuarioExistente.alergias : "");
+                updates.put("condicionesMedicas", usuarioExistente.condicionesMedicas != null ? usuarioExistente.condicionesMedicas : "");
+                updates.put("medicamentosActuales", usuarioExistente.medicamentosActuales != null ? usuarioExistente.medicamentosActuales : "");
+            }
+
+            final boolean[] exito = {false};
+            final CountDownLatch latch = new CountDownLatch(1);
+
+            db.collection("usuarios").document(email)
+                    .set(updates, SetOptions.merge())
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "✅ FIRESTORE: Solo foto actualizada exitosamente");
+                        exito[0] = true;
+                        latch.countDown();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "❌ FIRESTORE: Error actualizando solo foto: " + e.getMessage());
+                        exito[0] = false;
+                        latch.countDown();
+                    });
+
+            try {
+                latch.await(10, TimeUnit.SECONDS);
+                return exito[0];
+            } catch (InterruptedException e) {
+                Log.e(TAG, "❌ FIRESTORE: Interrupción actualizando solo foto: " + e.getMessage());
+                return false;
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ FIRESTORE: Error general actualizando solo foto: " + e.getMessage());
+            return false;
+        }
+    }
+
     public void actualizarPerfilCompleto(UsuarioEntity usuarioActualizado) {
-        Log.d(TAG, "🎯 INICIANDO ACTUALIZACION COMPLETA CON SINCRONIZACIÓN OFFLINE");
+        Log.d(TAG, "🎯 INICIANDO ACTUALIZACION COMPLETA DE PERFIL");
 
         if (usuarioActualizado == null) {
             Log.e(TAG, "❌ usuarioActualizado es NULL");
@@ -76,16 +236,13 @@ public class AuthViewModel extends AndroidViewModel {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                 if (user != null && user.getEmail() != null) {
                     String emailFirebase = user.getEmail();
-                    Log.d(TAG, "🔥 Email usuario actual: " + emailFirebase);
+                    Log.d(TAG, "🔥 Actualizando perfil completo para: " + emailFirebase);
 
-                    // Asegurar que el email sea el correcto
                     usuarioActualizado.email = emailFirebase;
 
-                    // ✅ VERIFICAR CONEXIÓN (NUEVO PARA PASO 8)
                     boolean tieneInternet = tieneConexionInternet();
                     Log.d(TAG, "📶 Estado conexión: " + (tieneInternet ? "CONECTADO" : "OFFLINE"));
 
-                    // ✅ 1. SIEMPRE ACTUALIZAR EN ROOM PRIMERO (PARA DATOS LOCALES INMEDIATOS)
                     Log.d(TAG, "🔄 Actualizando en Room...");
                     boolean exitoRoom = actualizarPerfilCompletoEnRoom(emailFirebase, usuarioActualizado);
 
@@ -93,64 +250,55 @@ public class AuthViewModel extends AndroidViewModel {
                         Log.d(TAG, "✅ ACTUALIZACIÓN EXITOSA EN ROOM");
 
                         if (tieneInternet) {
-                            // ✅ 2. SI HAY INTERNET: SINCRONIZAR CON FIRESTORE
-                            Log.d(TAG, "🔄 Con conexión - Sincronizando con Firestore...");
+                            Log.d(TAG, "🔄 Sincronizando con Firestore...");
                             boolean exitoFirestore = actualizarPerfilCompletoEnFirestore(emailFirebase, usuarioActualizado);
 
                             if (exitoFirestore) {
-                                // ✅ SINCRONIZACIÓN COMPLETA
                                 Log.d(TAG, "✅✅✅ SINCRONIZACIÓN COMPLETA");
                                 actualizarEstadoSincronizacionRoom(emailFirebase, true);
                                 sincronizacionPendiente.postValue(false);
-
-                                // Mostrar Toast de éxito
                                 mostrarToastEnUI("✅ Perfil actualizado correctamente");
+                                perfilActualizado.postValue(true);
                             } else {
-                                // ❌ ERROR EN FIRESTORE - MARCAR COMO PENDIENTE
                                 Log.w(TAG, "⚠️ Error Firestore - Marcando como pendiente");
                                 actualizarEstadoSincronizacionRoom(emailFirebase, false);
                                 sincronizacionPendiente.postValue(true);
-
-                                // Mostrar Toast informativo
                                 mostrarToastEnUI("✅ Guardado local - Error de sincronización");
+                                perfilActualizado.postValue(true);
                             }
                         } else {
-                            // 📶 SIN INTERNET - MARCAR COMO PENDIENTE
-                            Log.w(TAG, "📶 Sin conexión - Marcando como pendiente de sincronización");
+                            Log.w(TAG, "📶 Sin conexión - Marcando como pendiente");
                             actualizarEstadoSincronizacionRoom(emailFirebase, false);
                             sincronizacionPendiente.postValue(true);
-
-                            // Mostrar Toast informativo
-                            mostrarToastEnUI("✅ Guardado local - Sincronizará cuando haya conexión");
+                            mostrarToastEnUI("✅ Guardado local - Sincronizará con conexión");
+                            perfilActualizado.postValue(true);
                         }
 
-                        // ✅ FORZAR ACTUALIZACIÓN INMEDIATA DEL LIVEDATA
                         UsuarioEntity usuarioRecargado = usuarioRepository.getUsuarioByEmailSync(emailFirebase);
                         if (usuarioRecargado != null) {
                             usuarioActual.postValue(usuarioRecargado);
                             Log.d(TAG, "🎯 LiveData actualizado con datos frescos de Room");
-                        } else {
-                            usuarioActual.postValue(usuarioActualizado);
                         }
 
-                        perfilActualizado.postValue(true);
                     } else {
                         Log.e(TAG, "❌ ERROR EN ACTUALIZACIÓN ROOM");
                         perfilActualizado.postValue(false);
+                        mostrarToastEnUI("❌ Error al actualizar perfil");
                     }
 
                 } else {
                     Log.e(TAG, "❌ No hay usuario autenticado");
                     perfilActualizado.postValue(false);
+                    mostrarToastEnUI("❌ No hay usuario autenticado");
                 }
             } catch (Exception e) {
                 Log.e(TAG, "❌ ERROR actualizando perfil: " + e.getMessage());
                 perfilActualizado.postValue(false);
+                mostrarToastEnUI("❌ Error al actualizar perfil");
             }
         });
     }
 
-    // ✅ NUEVO PARA PASO 8: Mostrar Toast en el hilo principal
     private void mostrarToastEnUI(String mensaje) {
         if (getApplication() != null && getApplication().getMainExecutor() != null) {
             getApplication().getMainExecutor().execute(() -> {
@@ -159,7 +307,6 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // ✅ NUEVO PARA PASO 8: Actualizar solo el estado de sincronización en Room
     private void actualizarEstadoSincronizacionRoom(String email, boolean sincronizado) {
         try {
             executorService.execute(() -> {
@@ -175,12 +322,11 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // ✅ NUEVO PARA PASO 8: Reintentar sincronización pendiente
     public void reintentarSincronizacionPendiente() {
         executorService.execute(() -> {
             try {
                 if (!tieneConexionInternet()) {
-                    Log.d(TAG, "📶 Sin conexión - No se puede reintentar sincronización");
+                    Log.d(TAG, "📶 Sin conexión - No se puede reintentar");
                     return;
                 }
 
@@ -198,37 +344,32 @@ public class AuthViewModel extends AndroidViewModel {
                             usuarioRepository.actualizarPerfil(usuario);
                             Log.d(TAG, "✅✅✅ SINCRONIZACIÓN PENDIENTE COMPLETADA");
 
-                            // Actualizar LiveData
                             usuarioActual.postValue(usuario);
                             sincronizacionPendiente.postValue(false);
-
-                            // Notificar éxito
                             mostrarToastEnUI("✅ Sincronización completada");
                         } else {
-                            Log.w(TAG, "⚠️ Sincronización pendiente falló nuevamente");
+                            Log.w(TAG, "⚠️ Sincronización pendiente falló");
                         }
                     } else {
                         Log.d(TAG, "✅ No hay sincronizaciones pendientes");
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "❌ Error en reintento sincronización: " + e.getMessage());
+                Log.e(TAG, "❌ Error en reintento: " + e.getMessage());
             }
         });
     }
 
-    // 🔄 ACTUALIZAR PERFIL COMPLETO EN ROOM (VERSIÓN ROBUSTA - SIN CAMBIOS DEL PASO 7)
     private boolean actualizarPerfilCompletoEnRoom(String email, UsuarioEntity usuarioActualizado) {
         try {
-            Log.d(TAG, "🔄 ROOM: Actualizando para: " + email);
+            Log.d(TAG, "🔄 ROOM: Actualizando perfil completo para: " + email);
 
-            // Obtener usuario existente
             UsuarioEntity usuarioExistente = usuarioRepository.getUsuarioByEmailSync(email);
 
             if (usuarioExistente != null) {
                 Log.d(TAG, "✅ ROOM: Usuario encontrado, actualizando...");
 
-                // Actualizar todos los campos
+                // ✅ ACTUALIZAR TODOS LOS CAMPOS MANTENIENDO LA FOTO SI NO SE PROVEE UNA NUEVA
                 usuarioExistente.nombreCompleto = usuarioActualizado.nombreCompleto != null ? usuarioActualizado.nombreCompleto : usuarioExistente.nombreCompleto;
                 usuarioExistente.fechaNacimiento = usuarioActualizado.fechaNacimiento != null ? usuarioActualizado.fechaNacimiento : usuarioExistente.fechaNacimiento;
                 usuarioExistente.genero = usuarioActualizado.genero != null ? usuarioActualizado.genero : usuarioExistente.genero;
@@ -238,17 +379,20 @@ public class AuthViewModel extends AndroidViewModel {
                 usuarioExistente.alergias = usuarioActualizado.alergias != null ? usuarioActualizado.alergias : usuarioExistente.alergias;
                 usuarioExistente.condicionesMedicas = usuarioActualizado.condicionesMedicas != null ? usuarioActualizado.condicionesMedicas : usuarioExistente.condicionesMedicas;
                 usuarioExistente.medicamentosActuales = usuarioActualizado.medicamentosActuales != null ? usuarioActualizado.medicamentosActuales : usuarioExistente.medicamentosActuales;
-                // sincronizado se actualiza después según el resultado
+
+                // ✅ SOLO ACTUALIZAR FOTO SI SE PROVEE UNA NUEVA
+                if (usuarioActualizado.fotoPerfil != null && !usuarioActualizado.fotoPerfil.isEmpty()) {
+                    usuarioExistente.fotoPerfil = usuarioActualizado.fotoPerfil;
+                }
 
                 usuarioRepository.actualizarPerfil(usuarioExistente);
 
-                Log.d(TAG, "✅ ROOM: Actualización exitosa");
+                Log.d(TAG, "✅ ROOM: Perfil completo actualizado exitosamente");
                 return true;
 
             } else {
                 Log.d(TAG, "🆕 ROOM: Creando nuevo usuario...");
 
-                // Crear nuevo usuario
                 UsuarioEntity nuevoUsuario = new UsuarioEntity();
                 nuevoUsuario.email = email;
                 nuevoUsuario.nombreCompleto = usuarioActualizado.nombreCompleto;
@@ -260,7 +404,7 @@ public class AuthViewModel extends AndroidViewModel {
                 nuevoUsuario.alergias = usuarioActualizado.alergias;
                 nuevoUsuario.condicionesMedicas = usuarioActualizado.condicionesMedicas;
                 nuevoUsuario.medicamentosActuales = usuarioActualizado.medicamentosActuales;
-                // sincronizado se actualiza después según el resultado
+                nuevoUsuario.fotoPerfil = usuarioActualizado.fotoPerfil != null ? usuarioActualizado.fotoPerfil : "";
 
                 usuarioRepository.insert(nuevoUsuario);
 
@@ -274,15 +418,13 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // 🎯 ACTUALIZAR PERFIL COMPLETO EN FIRESTORE (MEJORADO PARA PASO 8)
     private boolean actualizarPerfilCompletoEnFirestore(String email, UsuarioEntity usuario) {
         try {
-            Log.d(TAG, "🔄 FIRESTORE: Actualizando para: " + email);
+            Log.d(TAG, "🔄 FIRESTORE: Actualizando perfil completo para: " + email);
 
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             Map<String, Object> updates = new HashMap<>();
 
-            // Actualizar todos los campos
             updates.put("email", usuario.email);
             updates.put("nombreCompleto", usuario.nombreCompleto != null ? usuario.nombreCompleto : "");
             updates.put("telefono", usuario.telefono != null ? usuario.telefono : "");
@@ -293,6 +435,7 @@ public class AuthViewModel extends AndroidViewModel {
             updates.put("alergias", usuario.alergias != null ? usuario.alergias : "");
             updates.put("condicionesMedicas", usuario.condicionesMedicas != null ? usuario.condicionesMedicas : "");
             updates.put("medicamentosActuales", usuario.medicamentosActuales != null ? usuario.medicamentosActuales : "");
+            updates.put("fotoPerfil", usuario.fotoPerfil != null ? usuario.fotoPerfil : "");
             updates.put("fechaActualizacion", System.currentTimeMillis());
             updates.put("sincronizado", true);
 
@@ -302,12 +445,12 @@ public class AuthViewModel extends AndroidViewModel {
             db.collection("usuarios").document(email)
                     .set(updates, SetOptions.merge())
                     .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "✅ FIRESTORE: Actualización exitosa");
+                        Log.d(TAG, "✅ FIRESTORE: Perfil completo actualizado exitosamente");
                         exito[0] = true;
                         latch.countDown();
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "❌ FIRESTORE: Error: " + e.getMessage());
+                        Log.e(TAG, "❌ FIRESTORE: Error actualizando perfil completo: " + e.getMessage());
                         exito[0] = false;
                         latch.countDown();
                     });
@@ -326,88 +469,70 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // 🔄 ACTUALIZAR DISPLAY NAME EN FIREBASE AUTH (SIN CAMBIOS)
-    private void actualizarDisplayNameFirebaseAuth(String nuevoNombre) {
-        try {
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user != null && nuevoNombre != null) {
-                com.google.firebase.auth.UserProfileChangeRequest profileUpdates =
-                        new com.google.firebase.auth.UserProfileChangeRequest.Builder()
-                                .setDisplayName(nuevoNombre)
-                                .build();
-
-                user.updateProfile(profileUpdates)
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                Log.d(TAG, "✅ AUTH: Display name actualizado: " + nuevoNombre);
-                            } else {
-                                Log.e(TAG, "❌ AUTH: Error actualizando display name");
-                            }
-                        });
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ AUTH: Error: " + e.getMessage());
-        }
-    }
-
-    // 📥 CARGAR USUARIO ACTUAL (MEJORADO PARA PASO 8)
-    private void cargarUsuarioActual() {
+    public void cargarUsuarioActual() {
         executorService.execute(() -> {
             try {
                 FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
                 if (firebaseUser != null && firebaseUser.getEmail() != null) {
                     String email = firebaseUser.getEmail();
 
-                    // FORZAR CARGA DESDE ROOM
                     UsuarioEntity usuario = usuarioRepository.getUsuarioByEmailSync(email);
                     if (usuario != null) {
                         Log.d(TAG, "✅✅✅ USUARIO CARGADO DESDE ROOM:");
                         Log.d(TAG, "   - Nombre: " + usuario.nombreCompleto);
                         Log.d(TAG, "   - Teléfono: " + usuario.telefono);
                         Log.d(TAG, "   - Dirección: " + usuario.direccion);
-                        Log.d(TAG, "   - Tipo sangre: " + usuario.tipoSangre);
+                        Log.d(TAG, "   - Foto: " + usuario.fotoPerfil);
                         Log.d(TAG, "   - Sincronizado: " + usuario.sincronizado);
 
                         usuarioActual.postValue(usuario);
-                        sincronizacionPendiente.postValue(!usuario.sincronizado); // ✅ NUEVO PARA PASO 8
+                        sincronizacionPendiente.postValue(!usuario.sincronizado);
                     } else {
                         Log.w(TAG, "⚠️ Usuario no encontrado en Room, creando básico...");
                         UsuarioEntity nuevoUsuario = new UsuarioEntity();
                         nuevoUsuario.email = email;
                         nuevoUsuario.nombreCompleto = firebaseUser.getDisplayName() != null ? firebaseUser.getDisplayName() : "Usuario";
                         nuevoUsuario.sincronizado = true;
+                        nuevoUsuario.fotoPerfil = "";
                         usuarioRepository.insert(nuevoUsuario);
                         usuarioActual.postValue(nuevoUsuario);
-                        sincronizacionPendiente.postValue(false); // ✅ NUEVO PARA PASO 8
+                        sincronizacionPendiente.postValue(false);
                     }
+                } else {
+                    Log.w(TAG, "⚠️ No hay usuario autenticado");
+                    usuarioActual.postValue(null);
+                    sincronizacionPendiente.postValue(false);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "❌ Error cargando usuario actual: " + e.getMessage());
+                Log.e(TAG, "❌ Error cargando usuario: " + e.getMessage());
+                usuarioActual.postValue(null);
             }
         });
     }
 
-    // 🎯 OBTENER USUARIO ACTUAL (Sincrónico) - VERSIÓN DEFINITIVA (SIN CAMBIOS)
     public UsuarioEntity getUsuarioActual() {
         try {
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
             if (firebaseUser != null && firebaseUser.getEmail() != null) {
                 String email = firebaseUser.getEmail();
 
-                // OBTENER SIEMPRE DE ROOM
                 UsuarioEntity usuarioRoom = usuarioRepository.getUsuarioByEmailSync(email);
                 if (usuarioRoom != null) {
                     Log.d(TAG, "✅ getUsuarioActual(): Datos COMPLETOS desde Room");
                     return usuarioRoom;
                 }
 
-                // Solo si no existe en Room, crear básico
-                Log.w(TAG, "⚠️ getUsuarioActual(): Usuario no encontrado en Room");
+                Log.w(TAG, "⚠️ getUsuarioActual(): Usuario no encontrado, creando básico...");
                 UsuarioEntity nuevoUsuario = new UsuarioEntity();
                 nuevoUsuario.email = email;
                 nuevoUsuario.nombreCompleto = firebaseUser.getDisplayName() != null ? firebaseUser.getDisplayName() : "Usuario";
+                nuevoUsuario.fotoPerfil = "";
+
+                usuarioRepository.insert(nuevoUsuario);
+
                 return nuevoUsuario;
             }
+            Log.w(TAG, "⚠️ getUsuarioActual(): No hay usuario autenticado");
             return null;
         } catch (Exception e) {
             Log.e(TAG, "❌ Error en getUsuarioActual(): " + e.getMessage());
@@ -415,7 +540,6 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // 🔐 LOGIN (SIN CAMBIOS)
     public void login(String email, String password) {
         executorService.execute(() -> {
             try {
@@ -435,7 +559,6 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    // 📝 REGISTRO (SIN CAMBIOS)
     public void register(String nombreCompleto, String email, String password) {
         executorService.execute(() -> {
             try {
@@ -456,7 +579,6 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    // 💾 GUARDAR USUARIO EN ROOM (SIN CAMBIOS)
     private void guardarUsuarioEnRoom(String nombreCompleto, String email, String password) {
         executorService.execute(() -> {
             try {
@@ -465,6 +587,7 @@ public class AuthViewModel extends AndroidViewModel {
                 usuario.nombreCompleto = nombreCompleto;
                 usuario.password = password;
                 usuario.sincronizado = true;
+                usuario.fotoPerfil = "";
                 usuarioRepository.insert(usuario);
             } catch (Exception e) {
                 Log.e(TAG, "❌ Error guardando en Room: " + e.getMessage());
@@ -472,13 +595,13 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    // ☁️ GUARDAR USUARIO EN FIRESTORE (SIN CAMBIOS)
     private void guardarUsuarioEnFirestore(String nombreCompleto, String email) {
         try {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             Map<String, Object> usuario = new HashMap<>();
             usuario.put("nombreCompleto", nombreCompleto);
             usuario.put("email", email);
+            usuario.put("fotoPerfil", "");
             usuario.put("fechaRegistro", System.currentTimeMillis());
             db.collection("usuarios").document(email).set(usuario);
         } catch (Exception e) {
@@ -486,7 +609,6 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
-    // 💾 GUARDAR CREDENCIALES (SIN CAMBIOS)
     public void saveCredentials(String email, String password) {
         executorService.execute(() -> {
             try {
@@ -502,7 +624,6 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    // 📥 CARGAR CREDENCIALES (SIN CAMBIOS)
     public String[] getSavedCredentials() {
         android.content.SharedPreferences prefs = getApplication()
                 .getSharedPreferences(CREDENTIALS_FILE, android.content.Context.MODE_PRIVATE);
@@ -511,7 +632,6 @@ public class AuthViewModel extends AndroidViewModel {
         return new String[]{email, password};
     }
 
-    // 🗑️ LIMPIAR CREDENCIALES (SIN CAMBIOS)
     public void clearCredentials() {
         executorService.execute(() -> {
             try {
@@ -524,26 +644,23 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    // 🚪 LOGOUT (ACTUALIZADO PARA PASO 8)
     public void logout() {
         executorService.execute(() -> {
             try {
                 FirebaseAuth.getInstance().signOut();
                 clearCredentials();
                 usuarioActual.postValue(null);
-                sincronizacionPendiente.postValue(false); // ✅ NUEVO PARA PASO 8
+                sincronizacionPendiente.postValue(false);
             } catch (Exception e) {
                 Log.e(TAG, "❌ Error en logout: " + e.getMessage());
             }
         });
     }
 
-    // 🎯 VERIFICAR SI HAY USUARIO LOGUEADO (SIN CAMBIOS)
     public boolean isLoggedIn() {
         return FirebaseAuth.getInstance().getCurrentUser() != null;
     }
 
-    // 📊 GETTERS PARA LIVEDATA (ACTUALIZADO PARA PASO 8)
     public MutableLiveData<AuthResult> getAuthResult() {
         return authResult;
     }
@@ -556,7 +673,6 @@ public class AuthViewModel extends AndroidViewModel {
         return usuarioActual;
     }
 
-    // ✅ NUEVO GETTER PARA PASO 8
     public MutableLiveData<Boolean> getSincronizacionPendiente() {
         return sincronizacionPendiente;
     }
@@ -567,7 +683,6 @@ public class AuthViewModel extends AndroidViewModel {
         executorService.shutdown();
     }
 
-    // 🔹 CLASE INTERNA AuthResult (SIN CAMBIOS)
     public static class AuthResult {
         private final boolean success;
         private final String message;
