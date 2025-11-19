@@ -8,13 +8,46 @@
     <dimen name="fab_margin">16dp</dimen>
 
     <!-- Dimensiones personalizadas para MediControlPro -->
+    <!-- Tamaños de texto -->
+    <dimen name="text_size_xlarge">28sp</dimen>
     <dimen name="text_size_large">24sp</dimen>
     <dimen name="text_size_medium">18sp</dimen>
     <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_xsmall">12sp</dimen>
+
+    <!-- Márgenes y padding -->
     <dimen name="padding_large">24dp</dimen>
     <dimen name="padding_medium">16dp</dimen>
     <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_xsmall">4dp</dimen>
+
     <dimen name="margin_large">24dp</dimen>
     <dimen name="margin_medium">16dp</dimen>
     <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_xsmall">4dp</dimen>
+
+    <!-- Tamaños de elementos -->
+    <dimen name="icon_size_large">80dp</dimen>
+    <dimen name="icon_size_medium">48dp</dimen>
+    <dimen name="icon_size_small">24dp</dimen>
+    <dimen name="icon_size_xsmall">16dp</dimen>
+
+    <!-- Radios de esquina -->
+    <dimen name="corner_radius_large">16dp</dimen>
+    <dimen name="corner_radius_medium">12dp</dimen>
+    <dimen name="corner_radius_small">8dp</dimen>
+    <dimen name="corner_radius_xsmall">4dp</dimen>
+
+    <!-- Alturas de elementos -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="card_height_large">180dp</dimen>
+    <dimen name="card_height_medium">120dp</dimen>
+    <dimen name="card_height_small">80dp</dimen>
+
+    <!-- Espaciados específicos -->
+    <dimen name="spacing_extra_large">32dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_extra_small">4dp</dimen>
 </resources>

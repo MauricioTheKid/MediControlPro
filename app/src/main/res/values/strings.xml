@@ -53,4 +53,28 @@
     <string name="login_failed">Usuario o contraseña incorrectos</string>
     <string name="register_success">Registro exitoso</string>
     <string name="register_failed">El usuario ya existe</string>
+
+    <!-- 🆕 NUEVOS STRINGS PARA HOME FRAGMENT MEJORADO -->
+    <string name="medical_services">Servicios Médicos</string>
+    <string name="appointments">Citas Médicas</string>
+    <string name="medical_records">Expedientes Médicos</string>
+    <string name="doctors_directory">Directorio de Doctores</string>
+    <string name="arrow_forward">Flecha hacia adelante</string>
+    <string name="explore_features">Explorar Funcionalidades</string>
+    <string name="welcome_subtitle">Gestión Médica Inteligente</string>
+    <string name="main_features">Características Principales</string>
+    <string name="feature_appointments_title">Gestión de Citas Médicas</string>
+    <string name="feature_appointments_desc">Agenda y gestiona tus citas de forma fácil y rápida</string>
+    <string name="feature_records_title">Expediente Médico Digital</string>
+    <string name="feature_records_desc">Accede a tu historial médico completo en cualquier momento</string>
+    <string name="feature_doctors_title">Directorio de Doctores</string>
+    <string name="feature_doctors_desc">Encuentra y contacta a los mejores especialistas</string>
+    <string name="menu_hint">💡 Usa el menú lateral para acceder a todas las funcionalidades</string>
+    <string name="health_in_good_hands">Tu Salud en Buenas Manos</string>
+
+    <!-- 🆕 STRINGS ADICIONALES PARA CONSISTENCIA -->
+    <string name="start_now">Comenzar Ahora</string>
+    <string name="view_details">Ver Detalles</string>
+    <string name="learn_more">Saber Más</string>
+    <string name="get_started">Empezar</string>
 </resources>

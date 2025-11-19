@@ -1,0 +1,96 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Fondo circular azul -->
+    <path
+        android:fillColor="@color/primaryBlue"
+        android:pathData="M100,0a100,100 0 1,0 100,100a100,100 0 0,0 -100,-100z"/>
+
+    <!-- Corazón rojo corregido -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M100,40
+            C78,20 40,35 40,70
+            C40,105 75,135 100,155
+            C125,135 160,105 160,70
+            C160,35 122,20 100,40 Z"/>
+
+    <!-- Cruz blanca suiza -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M90,70  L110,70
+            L110,85 L125,85
+            L125,105 L110,105
+            L110,120 L90,120
+            L90,105 L75,105
+            L75,85 L90,85 Z" />
+
+    <!-- Auriculares izquierdos -->
+    <path
+        android:fillColor="#4A4A4A"
+        android:pathData="M50,60 a10,8 0 1,0 20,0 a10,8 0 1,0 -20,0z"/>
+
+    <!-- Auriculares derechos -->
+    <path
+        android:fillColor="#4A4A4A"
+        android:pathData="M130,60 a10,8 0 1,0 20,0 a10,8 0 1,0 -20,0z"/>
+
+    <!-- Tubo izquierdo -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M60,65 Q70,80 75,95 Q80,110 85,120"/>
+
+    <!-- Tubo derecho -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M140,65 Q130,80 125,95 Q120,110 115,120"/>
+
+    <!-- Tubo central -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M85,120 L115,120"/>
+
+    <!-- Tubo descendente -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M100,120 L100,150"/>
+
+    <!-- Diafragma -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M85,150 a15,12 0 1,0 30,0 a15,12 0 1,0 -30,0z"/>
+
+    <!-- Borde diafragma -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="2"
+        android:pathData="M85,150 a15,12 0 1,0 30,0 a15,12 0 1,0 -30,0z"/>
+
+    <!-- Detalle interior del diafragma -->
+    <path
+        android:strokeColor="#999999"
+        android:strokeWidth="1"
+        android:pathData="M90,150 a10,7 0 1,0 20,0 a10,7 0 1,0 -20,0z"/>
+
+    <!-- Conexiones metálicas -->
+    <path
+        android:fillColor="#B0B0B0"
+        android:pathData="M55,60 a6,4 0 1,0 12,0 a6,4 0 1,0 -12,0z"/>
+
+    <path
+        android:fillColor="#B0B0B0"
+        android:pathData="M135,60 a6,4 0 1,0 12,0 a6,4 0 1,0 -12,0z"/>
+
+</vector>
